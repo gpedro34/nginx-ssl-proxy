@@ -1,0 +1,31 @@
+version: "3.7"
+services:
+  nginx-ssl-proxy:
+    build: .
+    restart: always
+    environment:
+      UPSTREAM: 127.0.0.1:8080
+      SERVERNAME: test.example.com
+      EXTRANAMES: www.test.example.com,test2.example.com
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - conf/proxy.conf:/etc/nginx/conf.d/default.conf # Main configuration
+      - conf/extension_module.conf:etc/nginx/main_location.conf # Extension module
+    networks:
+      - nginx-not-exposed-network-layer # Application Layer
+      ## Make sure you know what you're doing by exposing the bridge network
+      ## You will expose your host machine network to remote code execution if your Docker daemon is exposed via TCP
+      ## On Windows this will not break containment if you didn't exposed your TCP docker daemon (exposed from within Windows itself)
+      ##     since your Docker host is the Linux VM running inside Hyper-V and that only has CLI access and thus not acessible via TCP
+      ## On Linux (and Mac??) hosts this may break containment since the host itself is the one exposing the TCP daemon
+      ## If you absolutely need the host network exposed to this container uncomment the next line
+      #- bridge # Docker VM Host bridge
+
+volumes:
+  letsencrypt:
+
+networks:
+  nginx-not-exposed-network-layer:
